@@ -105,3 +105,52 @@ $("#crop").click(function () {
     });
 })
 //IMAGE CROP MODAL CODE
+
+
+//PHP Code for Cropped Image Handle And Water MArk
+<?php
+date_default_timezone_set('America/New_York');
+$path =  DIRECTORY."/";
+$folderPath = str_replace('\\', '/', $path);
+if (!file_exists($folderPath)) {
+    mkdir($folderPath, 0777, true);
+}
+$iConsumerID = $_POST['consumerID'];
+$iCustomName = $_POST['formName'];
+$sRand = date("Ymdhis");
+$image_parts = explode(";base64,", $_POST['croppedImageView']);
+$image_type_aux = explode("/", explode(":", $image_parts[0])[1]);
+$image_type = $image_type_aux[1];
+$image_base64 = base64_decode($image_parts[1]);
+$sFileName = $folderPath.$iCustomName.$sRand.'-'.$iConsumerID.'.'.$image_type;
+file_put_contents($sFileName, $image_base64);
+if($sFileName){
+    $syear = date("Y");
+    $sMonth = date("m");
+    $sDay = date("d");
+    $sImageCopy = "../uploads/".$syear."/".$sMonth."/".$sDay."/";
+    if (!file_exists($sImageCopy)) {
+        mkdir($sImageCopy, 0777, true);
+    }
+    $mPath = $sImageCopy.$iCustomName.$sRand.'-'.$iConsumerID.'.'.$image_type;
+    file_put_contents($mPath, $image_base64);
+}
+$sFile = '<img src="'.$mPath.'" alt="CroppedImage" id="croppedImageView" style="width:250px;height:90px;">';
+//Water Mark Code
+$originalImage = imagecreatefrompng($sFileName);
+$watermarkText = date("M j, Y g:i A");
+$fontSize = 3;
+$textColor = imagecolorallocate($originalImage, 0, 0, 0);
+$textX = imagesx($originalImage) - (strlen($watermarkText) * imagefontwidth($fontSize)) - 0;
+$textY = imagesy($originalImage) - $fontSize - 10;
+imagestring($originalImage, $fontSize, $textX, $textY, $watermarkText, $textColor);
+imagepng($originalImage, $sFileName);
+imagedestroy($originalImage);
+//Water Mark Code
+$data['file'] = $sFile;
+$data['filePath'] = $sFileName;
+echo json_encode($data);
+?>
+
+
+
